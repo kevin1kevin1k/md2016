@@ -28,7 +28,7 @@ with open('encode.txt') as encode_file:
 with open('pred.txt', 'w') as pred_file:
     with open('test.txt') as test_file:
         for line in test_file:
-            for cipher_word in line.split():
+            for cipher_word in line.rstrip().split(' '):
                 old_prob = {' ': 1.0}
                 old_str = {' ': ''}
                 
