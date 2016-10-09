@@ -44,13 +44,13 @@ void update(double old_prob[LEN_ALNUM], string old_str[LEN_ALNUM],
             double new_prob[LEN_ALNUM], string new_str[LEN_ALNUM],
             string prev_list, string this_list, int cipher_index) {
     
-    for (int i = 0; i < this_list.size(); i++) {
+    for (size_t i = 0; i < this_list.size(); i++) {
         char this_plain = this_list[i];
         int this_index = alnum_index(this_plain);
         double max_prob = -INF;
         int max_prev_index = -1;
         
-        for (int j = 0; j < prev_list.size(); j++) {
+        for (size_t j = 0; j < prev_list.size(); j++) {
             char prev_plain = prev_list[j];
             int prev_index = alnum_index(prev_plain);
             double prob = old_prob[prev_index] + bigram[prev_index][this_index];
@@ -77,7 +77,7 @@ void decode(string cipher_word, ostream& out) {
     string str[2][LEN_ALNUM] = {{""}};
     int OLD = 1, NEW = 0;
     
-    for (int i = 0; i < cipher_word.size(); i++) {
+    for (size_t i = 0; i < cipher_word.size(); i++) {
         char cipher = cipher_word[i];
         int cipher_index = alnum_index(cipher);
         string prev_list = (i == 0 ? " " : ALNUM);
