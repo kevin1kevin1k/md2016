@@ -4,23 +4,7 @@
 #include <stdarg.h>
 #include "hmm.h"
 
-#define DEBUG 0
-
-void debug(char *fmt, ...) {
-    char buf[MAX_LINE];
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf(buf, fmt, ap);
-    va_end(ap);
-    if (DEBUG) {
-        printf("%s", buf);
-    }
-}
-
-int flag;
-
 void check0(double d) {
-    flag = 0;
     if (d == 0) {
         printf("Error: divided by zero\n");
         exit(-1);
@@ -175,13 +159,13 @@ void Baum_Welch(HMM *hmm, FILE *input) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        printf("Usage: ./train DIR #ITER(default: 1)\n");
+    if (argc < 3) {
+        printf("Usage: ./train DIR model.txt #ITER[default 1]\n");
         printf("(Assume there are DIR/test.num and DIR/encode.bin)\n");
         exit(-1);
     }
     
-    int iter = argc == 2 ? 1 : atoi(argv[2]);
+    int iter = (argc == 3) ? 1 : atoi(argv[3]);
     char dir_name[MAX_LINE], test_num_name[MAX_LINE], encode_bin_name[MAX_LINE], model_name[MAX_LINE];
     strcpy(dir_name, argv[1]);
     strcpy(test_num_name, dir_name);
@@ -189,7 +173,8 @@ int main(int argc, char *argv[]) {
     strcpy(model_name, dir_name);
     strcat(test_num_name, "/test.num");
     strcat(encode_bin_name, "/encode.bin");
-    strcat(model_name, "/model.txt");
+    strcat(model_name, "/");
+    strcat(model_name, argv[2]);
     
     FILE *test_num = open_or_die(test_num_name, "r");
     FILE *encode_bin = open_or_die(encode_bin_name, "r");
@@ -202,13 +187,6 @@ int main(int argc, char *argv[]) {
         if (state > vocab) {
             vocab = state;
         }
-    }
-    // vocab++;
-    for (int i = 0; i < vocab; i++) {
-        for (int j = 0; j < vocab; j++) {
-            debug("%d ", encode[i][j]);
-        }
-        debug("\n");
     }
 
     HMM hmm;
