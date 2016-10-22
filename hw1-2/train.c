@@ -151,9 +151,9 @@ void Baum_Welch(HMM *hmm, FILE *input) {
     fseek(input, 0, SEEK_SET);
     int len = 0;
     int SPACE = hmm->state_num;
-    while (fscanf(input, "%d", &seq[len]) > 0) {
-        if (seq[len++] == SPACE) {
-            len--;
+    while (1) {
+        int res = fscanf(input, "%d", &seq[len]);
+        if (res <= 0 || seq[len] == SPACE) {
             calc_alpha(hmm, seq, len, alpha);
             calc_beta(hmm, seq, len, beta);
             calc_gamma(hmm, seq, len, alpha, beta, gamma, first_state, from_state, at_state, at_state_observ);
@@ -161,6 +161,13 @@ void Baum_Welch(HMM *hmm, FILE *input) {
             
             len = 0;
             n_seq++;
+            
+            if (res <= 0) {
+                break;
+            }
+        }
+        else {
+            len++;
         }
     }
     
