@@ -2,7 +2,7 @@
 
 CFLAGS += -O2
 
-TARGET = train
+TARGET = train test
 
 all: $(TARGET)
 
