@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <math.h>
 #include "hmm.h"
 
 void check0(double d) {
@@ -158,6 +159,45 @@ void Baum_Welch(HMM *hmm, FILE *input) {
     update(hmm, n_seq, first_state, from_state, from_state_to_state, at_state, at_state_observ);
 }
 
+void copy_model(HMM *h1, HMM *h2) {
+    for (int i = 0; i < h1->state_num; i++) {
+        h1->initial[i] = h2->initial[i];
+    }
+    
+    for (int i = 0; i < h1->state_num; i++) {
+        for (int j = 0; j < h1->state_num; j++) {
+            h1->transition[i][j] = h2->transition[i][j];
+        }
+    }
+    
+    for (int j = 0; j < h1->state_num; j++) {
+        for (int k = 0; k < h1->observ_num; k++) {
+            h1->observation[k][j] = h2->observation[k][j];
+        }
+    }
+}
+
+double diff_model(HMM *h1, HMM *h2) {
+    double sum = 0;
+    for (int i = 0; i < h1->state_num; i++) {
+        sum += fabs(h1->initial[i] - h2->initial[i]);
+    }
+    
+    for (int i = 0; i < h1->state_num; i++) {
+        for (int j = 0; j < h1->state_num; j++) {
+            sum += fabs(h1->transition[i][j] - h2->transition[i][j]);
+        }
+    }
+    
+    for (int j = 0; j < h1->state_num; j++) {
+        for (int k = 0; k < h1->observ_num; k++) {
+            sum += fabs(h1->observation[k][j] - h2->observation[k][j]);
+        }
+    }
+    
+    return sum;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         printf("Usage: ./train DIR model.txt #ITER[default 1]\n");
@@ -189,11 +229,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    HMM hmm;
+    HMM hmm, prev;
     hmm.state_num = hmm.observ_num = vocab;
+    prev.state_num = prev.observ_num = vocab;
     init_model(&hmm, encode);
     for (int i = 0; i < iter; i++) {
         Baum_Welch(&hmm, test_num);
+        if (i > 0) {
+            double diff = diff_model(&hmm, &prev);
+            printf("iter:%d, diff:%lf\n", i, diff);
+        }
+        copy_model(&prev, &hmm);
     }
     printf("train: %s, iter=%d ok\n", dir_name, iter);
     
