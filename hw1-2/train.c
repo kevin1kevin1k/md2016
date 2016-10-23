@@ -199,22 +199,19 @@ double diff_model(HMM *h1, HMM *h2) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        printf("Usage: ./train DIR model.txt #ITER[default 1]\n");
+    if (argc < 2) {
+        printf("Usage: ./train DIR #ITER[default 1]\n");
         printf("(Assume there are DIR/test.num and DIR/encode.bin)\n");
         exit(-1);
     }
     
-    int iter = (argc == 3) ? 1 : atoi(argv[3]);
-    char dir_name[MAX_LINE], test_num_name[MAX_LINE], encode_bin_name[MAX_LINE], model_name[MAX_LINE];
+    int iter = (argc == 2) ? 1 : atoi(argv[2]);
+    char dir_name[MAX_LINE], test_num_name[MAX_LINE], encode_bin_name[MAX_LINE];
     strcpy(dir_name, argv[1]);
     strcpy(test_num_name, dir_name);
     strcpy(encode_bin_name, dir_name);
-    strcpy(model_name, dir_name);
     strcat(test_num_name, "/test.num");
     strcat(encode_bin_name, "/encode.bin");
-    strcat(model_name, "/");
-    strcat(model_name, argv[2]);
     
     FILE *test_num = open_or_die(test_num_name, "r");
     FILE *encode_bin = open_or_die(encode_bin_name, "r");
@@ -236,19 +233,15 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < iter; i++) {
         Baum_Welch(&hmm, test_num);
         if (i > 0) {
-            double diff = diff_model(&hmm, &prev);
-            printf("iter:%d, diff:%lf\n", i, diff);
+            double diff = diff_model(&hmm, &prev), acc = calc_acc(&hmm, dir_name, "pred_tmp.num");
+            printf("iter:%d, diff:%lf, acc: %lf\n", i, diff, acc);
         }
         copy_model(&prev, &hmm);
     }
     printf("train: %s, iter=%d ok\n", dir_name, iter);
     
-    FILE *model = open_or_die(model_name, "w");
-    dumpHMM(model, &hmm);
-    
     fclose(test_num);
     fclose(encode_bin);
-    fclose(model);
     
     return 0;
 }

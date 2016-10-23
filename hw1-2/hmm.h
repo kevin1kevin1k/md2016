@@ -40,113 +40,18 @@ static FILE *open_or_die(const char *filename, const char *ht) {
     return fp;
 }
 
-static void loadHMM(HMM *hmm, const char *filename) {
-    int i, j;
-    FILE *fp = open_or_die(filename, "r");
-
-    char token[MAX_LINE] = "";
-    while(fscanf(fp, "%s", token) > 0) {
-        if (token[0] == '\0' || token[0] == '\n') {
-            continue;
-        }
-
-        if (strcmp(token, "initial:") == 0) {
-            fscanf(fp, "%d", &hmm->state_num);
-
-            for (i = 0; i < hmm->state_num; i++) {
-                fscanf(fp, "%lf", &(hmm->initial[i]));
-            }
-        }
-        else if (strcmp(token, "transition:") == 0) {
-            fscanf(fp, "%d", &hmm->state_num);
-
-            for (i = 0; i < hmm->state_num; i++) {
-                for (j = 0; j < hmm->state_num; j++) {
-                    fscanf(fp, "%lf", &(hmm->transition[i][j]));
-                }
-            }
-        }
-        else if (strcmp(token, "observation:") == 0) {
-            fscanf(fp, "%d", &hmm->observ_num);
-
-            for (i = 0; i < hmm->observ_num; i++) {
-                for (j = 0; j < hmm->state_num; j++) {
-                    fscanf(fp, "%lf", &(hmm->observation[i][j]));
-                }
-            }
-        }
-    }
-    fclose(fp);
-}
-
-static void dumpHMM(FILE *fp, HMM *hmm) {
-    int i, j;
-
-    //fprintf(fp, "model name: %s\n", hmm->model_name);
-    fprintf(fp, "initial: %d\n", hmm->state_num);
-    for (i = 0 ; i < hmm->state_num; i++) {
-        fprintf(fp, "%.5lf ", hmm->initial[i]);
-    }
-    fprintf(fp, "\n");
-
-    fprintf(fp, "\ntransition: %d\n", hmm->state_num);
-    for (i = 0; i < hmm->state_num; i++) {
-        for (j = 0; j < hmm->state_num; j++) {
-            fprintf(fp, "%.5lf ", hmm->transition[i][j]);
-        }
-        fprintf(fp, "\n");
-    }
-
-    fprintf(fp, "\nobservation: %d\n", hmm->observ_num);
-    for (i = 0; i < hmm->observ_num; i++){
-        for (j = 0; j < hmm->state_num; j++) {
-            fprintf(fp, "%.5lf ", hmm->observation[i][j]);
-        }
-        fprintf(fp, "\n");
-    }
-}
-
-static int load_models(const char *listname, HMM *hmm, const int max_num) {
-    FILE *fp = open_or_die(listname, "r");
-
-    int count = 0;
-    char filename[MAX_LINE] = "";
-    while(fscanf(fp, "%s", filename) == 1) {
-        loadHMM(&hmm[count], filename);
-        count++;
-
-        if (count >= max_num) {
-            return count;
-        }
-    }
-    fclose(fp);
-
-    return count;
-}
-
-static void dump_models(HMM *hmm, const int num) {
-    int i = 0;
-    for ( ; i < num; i++) { 
-        dumpHMM(stderr, &hmm[i]);
-    }
-}
-
 static void init_model(HMM *hmm, int encode[MAX_OBSERV][MAX_STATE]) {
     srand(time(NULL));
     
     double sum = 0;
-    // printf("Initial:\n");
     for (int i = 0; i < hmm->state_num; i++) {
         hmm->initial[i] = rand();
         sum += hmm->initial[i];
     }
     for (int i = 0; i < hmm->state_num; i++) {
         hmm->initial[i] /= sum;
-        // printf("%.2lf ", hmm->initial[i]);
     }
-    // printf("\n");
     
-    // printf("Transition:\n");
     for (int i = 0; i < hmm->state_num; i++) {
         sum = 0;
         for (int j = 0; j < hmm->state_num; j++) {
@@ -155,9 +60,7 @@ static void init_model(HMM *hmm, int encode[MAX_OBSERV][MAX_STATE]) {
         }
         for (int j = 0; j < hmm->state_num; j++) {
             hmm->transition[i][j] /= sum;
-            // printf("%.2lf ", hmm->transition[i][j]);
         }
-        // printf("\n");
     }
     
     for (int j = 0; j < hmm->state_num; j++) {
@@ -170,14 +73,93 @@ static void init_model(HMM *hmm, int encode[MAX_OBSERV][MAX_STATE]) {
             hmm->observation[k][j] /= sum;
         }
     }
-    
-    // printf("Observation:\n");
-    for (int k = 0; k < hmm->observ_num; k++) {
-        for (int j = 0; j < hmm->state_num; j++) {
-            // printf("%.2lf ", hmm->observation[k][j]);
-        }
-        // printf("\n");
+}
+
+static double Viterbi(HMM *hmm, int seq[MAX_SEQ], int len) {
+    double delta[MAX_SEQ][MAX_STATE];
+    int psi[MAX_SEQ][MAX_STATE];
+    for (int i = 0; i < hmm->state_num; i++) {
+        delta[0][i] = hmm->initial[i] * hmm->observation[seq[0]][i];
     }
+    
+    for (int t = 1; t < len; t++) {
+        for (int j = 0; j < hmm->state_num; j++) {
+            double max_prob = 0;
+            int max_prev;
+            for (int i = 0; i < hmm->state_num; i++) {
+                double prob = delta[t-1][i] * hmm->transition[i][j];
+                if (prob > max_prob) {
+                    max_prob = prob;
+                    max_prev = i;
+                }
+            }
+            delta[t][j] = max_prob * hmm->observation[seq[t]][j];
+            psi[t][j] = max_prev;
+        }
+    }
+    
+    double max = 0;
+    for (int i = 0; i < hmm->state_num; i++) {
+        if (delta[len-1][i] > max) {
+            max = delta[len-1][i];
+            seq[len-1] = i;
+        }
+    }
+    
+    // store the decoded sequence back into seq
+    for (int t = len - 2; t >= 0; t--) {
+        seq[t] = psi[t+1][seq[t+1]];
+    }
+    
+    return max;
+}
+
+static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MAX_LINE]) {
+    char test_num_name[MAX_LINE], pred_num_name[MAX_LINE], ans_num_name[MAX_LINE];
+    strcpy(test_num_name, dir_name);
+    strcpy(pred_num_name, dir_name);
+    strcpy(ans_num_name, dir_name);
+    strcat(test_num_name, "/test.num");
+    strcat(pred_num_name, "/");
+    strcat(pred_num_name, _pred_num_name);
+    strcat(ans_num_name, "/ans.num");
+    
+    FILE *ans_num = open_or_die(ans_num_name, "r");
+    FILE *test_num = open_or_die(test_num_name, "r");
+    FILE *pred_num = open_or_die(pred_num_name, "w");
+    
+    int seq[MAX_SEQ];
+    int SPACE = hmm->state_num;
+    int len = 0, ans, n_num = 0, n_same = 0;
+    while (1) {
+        int res = fscanf(test_num, "%d", &seq[len]);
+        if (res <= 0 || seq[len] == SPACE) {
+            Viterbi(hmm, seq, len);
+            n_num += len + 1;
+            for (int i = 0; i <= len; i++) {
+                fscanf(ans_num, "%d", &ans);
+                if (ans == seq[i]) {
+                    n_same++;
+                }
+                fprintf(pred_num, "%d ", seq[i]);
+            }
+            
+            len = 0;
+            
+            if (res <= 0) {
+                break;
+            }
+        }
+        else {
+            len++;
+        }
+    }
+    
+    fclose(test_num);
+    fclose(pred_num);
+    fclose(ans_num);
+    
+    return 1.0 * n_same / n_num;
 }
 
 #endif
