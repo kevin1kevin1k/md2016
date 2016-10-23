@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #ifndef MAX_STATE
 #	define MAX_STATE	60
@@ -41,36 +40,25 @@ static FILE *open_or_die(const char *filename, const char *ht) {
 }
 
 static void init_model(HMM *hmm, int encode[MAX_OBSERV][MAX_STATE]) {
-    srand(time(NULL));
-    
-    double sum = 0;
+    double a = 1.0 / hmm->state_num;
     for (int i = 0; i < hmm->state_num; i++) {
-        hmm->initial[i] = rand();
-        sum += hmm->initial[i];
-    }
-    for (int i = 0; i < hmm->state_num; i++) {
-        hmm->initial[i] /= sum;
+        hmm->initial[i] = a;
     }
     
     for (int i = 0; i < hmm->state_num; i++) {
-        sum = 0;
         for (int j = 0; j < hmm->state_num; j++) {
-            hmm->transition[i][j] = rand();
-            sum += hmm->transition[i][j];
-        }
-        for (int j = 0; j < hmm->state_num; j++) {
-            hmm->transition[i][j] /= sum;
+            hmm->transition[i][j] = a;
         }
     }
     
     for (int j = 0; j < hmm->state_num; j++) {
-        sum = 0;
+        int sum = 0;
         for (int k = 0; k < hmm->observ_num; k++) {
-            hmm->observation[k][j] = encode[k][j] ? rand() : 0;
-            sum += hmm->observation[k][j];
+            sum += encode[k][j];
         }
+        double b = 1.0 / sum;
         for (int k = 0; k < hmm->observ_num; k++) {
-            hmm->observation[k][j] /= sum;
+            hmm->observation[k][j] = encode[k][j] ? b : 0;
         }
     }
 }
