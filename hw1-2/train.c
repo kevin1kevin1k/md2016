@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < iter; i++) {
         Baum_Welch(&hmm, test_num);
         if (i > 0) {
-            double diff = diff_model(&hmm, &prev), max, acc = calc_acc(&hmm, dir_name, "pred_tmp.num", &max);
-            printf("iter:%d, diff:%lf, acc: %lf, max: %g\n", i, diff, acc, max);
+            double diff = diff_model(&hmm, &prev), max = 0, acc = calc_acc(&hmm, dir_name, "pred_tmp.num", &max);
+            printf("iter:%d, diff:%lf, acc: %lf, max_prob_log: %g\n", i, diff, acc, max);
         }
         copy_model(&prev, &hmm);
     }

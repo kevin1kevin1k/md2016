@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #ifndef MAX_STATE
 #	define MAX_STATE	60
@@ -315,7 +316,7 @@ static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MA
     while (1) {
         int res = fscanf(test_num, "%d", &seq[len]);
         if (res <= 0 || seq[len] == SPACE) {
-            *max_prob = Viterbi(hmm, seq, len);
+            *max_prob += log(Viterbi(hmm, seq, len));
             n_num += len + 1;
             for (int i = 0; i <= len; i++) {
                 fscanf(ans_num, "%d", &ans);
