@@ -1,8 +1,9 @@
 .PHONY: all clean run
 
 CFLAGS += -O2
+LDFLAGS += -lm
 
-TARGET = train test
+TARGET = train
 
 all: $(TARGET)
 
@@ -10,4 +11,5 @@ clean:
 	$(RM) $(TARGET)
 
 run: $(TARGET)
-	./$(TARGET) valid
+	./$(TARGET) test1 &
+	./$(TARGET) test2 &
