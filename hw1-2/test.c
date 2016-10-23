@@ -42,8 +42,8 @@ double Viterbi(HMM *hmm, int seq[MAX_SEQ], int len) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: ./test DIR\n");
+    if (argc != 4) {
+        printf("Usage: ./test DIR model.txt pred.num\n");
         printf("(Assume there are DIR/model.txt and DIR/test.num)\n");
         exit(-1);
     }
@@ -53,9 +53,11 @@ int main(int argc, char *argv[]) {
     strcpy(model_name, dir_name);
     strcpy(test_num_name, dir_name);
     strcpy(pred_num_name, dir_name);
-    strcat(model_name, "/model.txt");
+    strcat(model_name, "/");
+    strcat(model_name, argv[2]);
     strcat(test_num_name, "/test.num");
-    strcat(pred_num_name, "/pred.num");
+    strcat(pred_num_name, "/");
+    strcat(pred_num_name, argv[3]);
     
     HMM hmm;
     loadHMM(&hmm, model_name);
@@ -83,6 +85,7 @@ int main(int argc, char *argv[]) {
             len++;
         }
     }
+    printf("test: %s ok\n", dir_name);
     
     fclose(test_num);
     fclose(pred_num);

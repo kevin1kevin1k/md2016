@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < iter; i++) {
         Baum_Welch(&hmm, test_num);
     }
-    printf("%s ok\n", dir_name);
+    printf("train: %s, iter=%d ok\n", dir_name, iter);
     
     FILE *model = open_or_die(model_name, "w");
     dumpHMM(model, &hmm);
