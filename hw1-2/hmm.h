@@ -295,7 +295,7 @@ static double Viterbi(HMM *hmm, int seq[MAX_SEQ], int len) {
     return max;
 }
 
-static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MAX_LINE]) {
+static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MAX_LINE], double *max_prob) {
     char test_num_name[MAX_LINE], pred_num_name[MAX_LINE], ans_num_name[MAX_LINE];
     strcpy(test_num_name, dir_name);
     strcpy(pred_num_name, dir_name);
@@ -315,7 +315,7 @@ static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MA
     while (1) {
         int res = fscanf(test_num, "%d", &seq[len]);
         if (res <= 0 || seq[len] == SPACE) {
-            Viterbi(hmm, seq, len);
+            *max_prob = Viterbi(hmm, seq, len);
             n_num += len + 1;
             for (int i = 0; i <= len; i++) {
                 fscanf(ans_num, "%d", &ans);
