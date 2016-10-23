@@ -296,19 +296,25 @@ static double Viterbi(HMM *hmm, int seq[MAX_SEQ], int len) {
     return max;
 }
 
-static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MAX_LINE], double *max_prob) {
+void add_file_name(char dest[MAX_LINE], char src1[MAX_LINE], char src2[MAX_LINE]) {
+    strcpy(dest, src1);
+    strcat(dest, src2);
+}
+
+static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], double *max_prob) {
     char test_num_name[MAX_LINE], pred_num_name[MAX_LINE], ans_num_name[MAX_LINE];
-    strcpy(test_num_name, dir_name);
-    strcpy(pred_num_name, dir_name);
-    strcpy(ans_num_name, dir_name);
-    strcat(test_num_name, "/test.num");
-    strcat(pred_num_name, "/");
-    strcat(pred_num_name, _pred_num_name);
-    strcat(ans_num_name, "/ans.num");
+    add_file_name(test_num_name, dir_name, "/test.num");
+    add_file_name(pred_num_name, dir_name, "/pred_tmp.num");
+    add_file_name(ans_num_name, dir_name, "/ans.num");
     
-    FILE *ans_num = open_or_die(ans_num_name, "r");
+    int VALID = !strncmp(dir_name, "valid", 5);
+    
     FILE *test_num = open_or_die(test_num_name, "r");
     FILE *pred_num = open_or_die(pred_num_name, "w");
+    FILE *ans_num;
+    if (VALID) {
+        ans_num = open_or_die(ans_num_name, "r");
+    }
     
     int seq[MAX_SEQ];
     int SPACE = hmm->state_num;
@@ -317,11 +323,15 @@ static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MA
         int res = fscanf(test_num, "%d", &seq[len]);
         if (res <= 0 || seq[len] == SPACE) {
             *max_prob += log(Viterbi(hmm, seq, len));
-            n_num += len + 1;
-            for (int i = 0; i <= len; i++) {
-                fscanf(ans_num, "%d", &ans);
-                if (ans == seq[i]) {
-                    n_same++;
+            int len_ = (res <= 0) ? len : len+1; // including SPACE
+            n_num += len_;
+            
+            for (int i = 0; i < len_; i++) {
+                if (VALID) {
+                    fscanf(ans_num, "%d", &ans);
+                    if (ans == seq[i]) {
+                        n_same++;
+                    }
                 }
                 fprintf(pred_num, "%d ", seq[i]);
             }
@@ -339,9 +349,11 @@ static double calc_acc(HMM *hmm, char dir_name[MAX_LINE], char _pred_num_name[MA
     
     fclose(test_num);
     fclose(pred_num);
-    fclose(ans_num);
+    if (VALID) {
+        fclose(ans_num);
+    }
     
-    return 1.0 * n_same / n_num;
+    return VALID ? 1.0 * n_same / n_num : 0.0;
 }
 
 #endif
